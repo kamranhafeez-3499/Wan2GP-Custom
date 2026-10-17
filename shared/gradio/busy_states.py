@@ -197,7 +197,7 @@ _JS_GALLERY = r"""
     window.wangpGalleryWired = true;
     const CLS = 'wangp-media-loading';
     const SEL = 'button.thumbnail-item, .thumbnail-small';
-    const pending = (m) => m.tagName === 'VIDEO' ? m.readyState < 2 : !m.complete;
+    const pending = (m) => m.tagName === 'VIDEO' ? m.readyState < 1 : !m.complete;  // metadata is enough for a poster frame
     const watch = (thumb) => {
         const media = thumb.querySelector('img, video');
         if (!media) return;
@@ -205,8 +205,9 @@ _JS_GALLERY = r"""
         thumb._wangpMedia = media;
         if (!pending(media)) { thumb.classList.remove(CLS); return; }
         thumb.classList.add(CLS);
-        const done = () => thumb.classList.remove(CLS);
-        for (const ev of ['load', 'loadeddata', 'error']) media.addEventListener(ev, done, {once: true});
+        const done = () => { clearTimeout(timer); thumb.classList.remove(CLS); };
+        const timer = setTimeout(done, 10000);  // never leave media hidden behind the shimmer
+        for (const ev of ['load', 'loadedmetadata', 'loadeddata', 'error']) media.addEventListener(ev, done, {once: true});
     };
     let queued = false;
     const scan = () => {
