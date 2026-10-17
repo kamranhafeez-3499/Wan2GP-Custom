@@ -16,13 +16,22 @@ _JS_CORE = """
     const active = new Map();
     let lastErrorAt = -1;
     const isError = (n) => n.nodeType === 1 && (n.matches?.('.toast-body.error') || n.querySelector?.('.toast-body.error'));
-    const startObserver = () => {
-        if (!document.body) return document.addEventListener('DOMContentLoaded', startObserver, {once: true});
-        new MutationObserver((records) => {
+    // Observe only Gradio's toast container (a persistent child of <main>): a document-wide subtree
+    // observer ran querySelector on every node added during the form rebuild.
+    let toastWrap = null, toastObserver = null;
+    const attachToasts = () => {
+        const wrap = document.querySelector('.toast-wrap');
+        if (wrap === toastWrap) return;
+        toastObserver?.disconnect();
+        toastWrap = wrap;
+        if (!wrap) return;
+        toastObserver = new MutationObserver((records) => {
             for (const r of records) for (const n of r.addedNodes) if (isError(n)) { lastErrorAt = performance.now(); for (const k of [...active.keys()]) end(k, {ok: false}); }
-        }).observe(document.body, {childList: true, subtree: true});
+        });
+        toastObserver.observe(wrap, {childList: true, subtree: true});
     };
-    startObserver();
+    attachToasts();
+    setInterval(attachToasts, 1000);
     const resolve = (target) => {
         try {
             if (target) return document.querySelector(target);
