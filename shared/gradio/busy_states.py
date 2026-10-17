@@ -78,12 +78,9 @@ _JS_MODEL_SWITCH = r"""
         const li = e.target?.closest?.(PICK);
         if (li) { lastPicked = (li.textContent || '').trim(); pickedAt = performance.now(); }
     }, true);
-    const currentName = () => {
-        const fresh = lastPicked && performance.now() - pickedAt < 2000;
-        const name = fresh ? lastPicked : (document.querySelector('#model_list input')?.value || '').trim();
-        lastPicked = '';
-        return name;
-    };
+    // Enqueue follows the pick within one round trip, so a pick older than 2 s is stale.
+    const freshPick = () => (lastPicked && performance.now() - pickedAt < 2000) ? lastPicked : '';
+    const fallbackName = () => (document.querySelector('#model_list input')?.value || '').trim();
     const lineEl = () => {
         let el = document.getElementById('wangp_switching_line');
         if (el) return el;
@@ -99,13 +96,16 @@ _JS_MODEL_SWITCH = r"""
         window.wangpBusy?.start('model', '#model_list', {skeleton: '.wangp-actions-column', timeoutMs: 120000});
         const el = lineEl();
         if (!el) return;
-        el.textContent = 'Switching to ' + currentName() + '… rebuilding settings';
+        const name = freshPick();
+        // Only a fresh pick may overwrite a line already shown in this busy period.
+        if (name || el.style.display === 'none') el.textContent = 'Switching to ' + (name || fallbackName()) + '… rebuilding settings';
         el.style.display = '';
     });
     window.addEventListener('wangp:model-switch-end', () => {
         window.wangpBusy?.end('model');
         const el = document.getElementById('wangp_switching_line');
         if (el) el.style.display = 'none';
+        lastPicked = '';
     });
 })();
 """
