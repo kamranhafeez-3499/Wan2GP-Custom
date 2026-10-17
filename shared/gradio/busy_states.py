@@ -5,6 +5,7 @@ from functools import wraps
 
 from gradio import blocks
 from gradio.events import EventListenerMethod
+from shared.model_capabilities import capabilities_payload  # re-exported for wgp.py
 
 _BUSY_EVENTS = {'click', 'upload'}
 
@@ -130,12 +131,73 @@ _CSS_CORE = r"""
 """
 
 
+_JS_DIMMING = r"""
+(() => {
+    if (window.wangpDimmingWired) return;
+    window.wangpDimmingWired = true;
+    const TOP = {'Mask Generator': c => c.mask, 'Motion Designer': c => c.motion};
+    const GALLERY = {'Video / Images': c => c.video || c.image, 'Audio Files': c => c.audio, '3D': c => c.mesh};
+    let state = null;
+    const setNa = (btn, na, name) => {
+        btn.classList.toggle('wangp-na', na);
+        if (na) btn.setAttribute('data-wangp-tip', 'Not used by ' + name);
+        else btn.removeAttribute('data-wangp-tip');
+    };
+    const applyTabs = () => {
+        if (!state) return;
+        const c = state.caps || {}, name = state.model_name || 'this model';
+        // Gradio renders each tab bar twice (a visually-hidden measuring copy), so classify per bar.
+        for (const bar of document.querySelectorAll('.tab-container, .tab-wrapper')) {
+            const bs = Array.from(bar.querySelectorAll('button'));
+            const inGallery = bs.some(b => (b.textContent || '').trim() === 'Video / Images');
+            for (const b of bs) {
+                const label = (b.textContent || '').trim();
+                const rule = (inGallery ? GALLERY : TOP)[label];
+                if (rule) setNa(b, !rule(c), name);
+            }
+        }
+    };
+    const applyUnload = () => {
+        const btn = document.getElementById('wangp_model_tool_unload');
+        if (!btn) return;
+        const status = Array.from(document.querySelectorAll('.wangp-progress')).find(e => (e.textContent || '').includes('No Model is Loaded'));
+        const na = !!status;
+        btn.classList.toggle('wangp-na', na);
+        if (na) { btn.setAttribute('aria-disabled', 'true'); btn.setAttribute('data-wangp-tip', 'Nothing is loaded in RAM'); }
+        else { btn.removeAttribute('aria-disabled'); btn.removeAttribute('data-wangp-tip'); }
+    };
+    const readCaps = () => {
+        const ta = document.querySelector('#wangp_model_caps textarea, #wangp_model_caps input');
+        if (!ta || !ta.value) return;
+        try { state = JSON.parse(ta.value); } catch (e) { return; }
+        applyTabs();
+    };
+    let queued = false;
+    const refresh = () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => { queued = false; readCaps(); applyTabs(); applyUnload(); });
+    };
+    document.addEventListener('input', (e) => { if (e.target?.closest?.('#wangp_model_caps')) refresh(); }, true);
+    new MutationObserver(refresh).observe(document.documentElement, {subtree: true, childList: true, characterData: true});
+    refresh();
+})();
+"""
+
+_CSS_DIMMING = r"""
+.wangp-na { opacity: .38; cursor: help; position: relative; }
+[data-wangp-tip] { position: relative; }
+.tab-container:has(> .wangp-na) { overflow: visible; }
+[data-wangp-tip]:hover::after { content: attr(data-wangp-tip); position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 1000; padding: 7px 11px; border-radius: 10px; font-size: 12px; font-weight: 700; color: #eceaf6; background: #3a3b50; box-shadow: 6px 6px 14px rgba(0,0,0,.45), -3px -3px 8px rgba(255,255,255,.05); opacity: 1; pointer-events: none; }
+"""
+
+
 def get_javascript():
-    return _JS_CORE + _JS_MODEL_SWITCH
+    return _JS_CORE + _JS_MODEL_SWITCH + _JS_DIMMING
 
 
 def get_css():
-    return _CSS_CORE
+    return _CSS_CORE + _CSS_DIMMING
 
 
 def start_js(key, target):

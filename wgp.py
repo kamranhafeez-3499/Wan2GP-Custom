@@ -13800,12 +13800,13 @@ def generate_media_tab(update_form = False, state_dict = None, ui_defaults = Non
                     dropdown_updates = goto_model_type_fn(state_value, model_target)
                     description, _ = change_model(state_value, _model_choice_target_model_type(model_target), refresh_header=False)
                     finetune_updates = [finetune_editor.toolbar_button_updates(_get_finetune_editor_deps(), get_state_model_type(state_value))] if finetune_outputs else []
-                    return [*dropdown_updates, description, *fill_inputs(state_value), *finetune_updates]
+                    return [*dropdown_updates, description, *fill_inputs(state_value), *finetune_updates, busy_states.capabilities_payload(get_model_name(get_state_model_type(state_value)), get_model_def(get_state_model_type(state_value)))]
 
+                model_caps = gr.Textbox(value=busy_states.capabilities_payload(get_model_name(get_state_model_type(state_dict)), get_model_def(get_state_model_type(state_dict))), visible=False, elem_id="wangp_model_caps")
                 switch_model_form._wangp_model_switch_tail = True
                 model_choice_target.change(fn=switch_model_form,
                     inputs=[state, model_choice_target, wizard_prompt_activated_var, wizard_variables_var, prompt, wizard_prompt, *prompt_vars, target_state, *gen_inputs],
-                    outputs=[*goto_model_type_outputs, model_description, *refresh_outputs, *finetune_outputs],
+                    outputs=[*goto_model_type_outputs, model_description, *refresh_outputs, *finetune_outputs, model_caps],
                     trigger_mode="always_last",
                     show_progress="full" if args.debug_gen_form else "hidden",
                 ).then(
