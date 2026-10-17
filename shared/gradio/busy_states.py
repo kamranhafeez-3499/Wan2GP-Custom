@@ -191,13 +191,105 @@ _CSS_DIMMING = r"""
 [data-wangp-tip]:hover::after { content: attr(data-wangp-tip); position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 1000; padding: 7px 11px; border-radius: 10px; font-size: 12px; font-weight: 700; color: #eceaf6; background: #3a3b50; box-shadow: 6px 6px 14px rgba(0,0,0,.45), -3px -3px 8px rgba(255,255,255,.05); opacity: 1; pointer-events: none; }
 """
 
+_JS_GALLERY = r"""
+(() => {
+    if (window.wangpGalleryWired) return;
+    window.wangpGalleryWired = true;
+    const CLS = 'wangp-media-loading';
+    const SEL = 'button.thumbnail-item, .thumbnail-small';
+    const pending = (m) => m.tagName === 'VIDEO' ? m.readyState < 2 : !m.complete;
+    const watch = (thumb) => {
+        const media = thumb.querySelector('img, video');
+        if (!media) return;
+        if (thumb._wangpMedia === media) return;
+        thumb._wangpMedia = media;
+        if (!pending(media)) { thumb.classList.remove(CLS); return; }
+        thumb.classList.add(CLS);
+        const done = () => thumb.classList.remove(CLS);
+        for (const ev of ['load', 'loadeddata', 'error']) media.addEventListener(ev, done, {once: true});
+    };
+    let queued = false;
+    const scan = () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => { queued = false; document.querySelectorAll(SEL).forEach(watch); });
+    };
+    new MutationObserver(scan).observe(document.documentElement, {subtree: true, childList: true});
+    scan();
+})();
+"""
+
+_CSS_GALLERY = r"""
+.wangp-media-loading { position: relative; overflow: hidden; background: #1c1d27; }
+.wangp-media-loading > img, .wangp-media-loading > video { opacity: 0; }
+.wangp-media-loading::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(155,140,255,.10) 40%, rgba(255,255,255,.07) 50%, transparent 70%); animation: wangp-shimmer 1.3s ease-in-out infinite; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+    .wangp-media-loading::after { animation: none; transform: none; }
+}
+"""
+
+_HEAD_STYLE = r"""
+#wangp_page_skeleton { position: fixed; inset: 0; z-index: 9999; background: #22232f; transition: opacity .25s; display: grid; align-content: start; gap: 16px; padding: 18px; box-sizing: border-box; overflow: hidden; }
+#wangp_page_skeleton .r { display: flex; gap: 12px; }
+#wangp_page_skeleton .g { flex: 1; min-width: 0; display: grid; gap: 12px; align-content: start; }
+#wangp_page_skeleton .sk { position: relative; overflow: hidden; background: #1c1d27; border-radius: 12px; box-shadow: inset 3px 3px 7px rgba(0,0,0,.35), inset -3px -3px 7px rgba(255,255,255,.07); }
+#wangp_page_skeleton .sk::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(155,140,255,.10) 40%, rgba(255,255,255,.07) 50%, transparent 70%); animation: wangp-pagesk-shimmer 1.3s ease-in-out infinite; }
+#wangp_page_skeleton .sk.line { height: 12px; border-radius: 999px; }
+@keyframes wangp-pagesk-shimmer { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+    #wangp_page_skeleton .sk::after { animation: none; transform: none; }
+}
+"""
+
+_HEAD_JS = r"""
+(function () {
+    var HTML = '<div id="wangp_page_skeleton" aria-hidden="true">'
+        + '<div class="r"><div class="sk" style="width:120px;height:26px"></div><div style="flex:1"></div><div class="sk" style="width:380px;max-width:50%;height:34px;border-radius:999px"></div></div>'
+        + '<div class="r"><div class="sk" style="width:190px;height:42px"></div><div class="sk" style="flex:1;height:42px"></div><div class="sk" style="flex:1;height:42px"></div></div>'
+        + '<div class="r"><div class="g"><div class="sk" style="height:38px"></div><div class="sk" style="height:110px"></div><div class="sk line"></div><div class="sk line" style="width:70%"></div></div><div class="sk" style="flex:1;height:200px"></div></div>'
+        + '</div>';
+    var done = false;
+    function remove(el) {
+        if (done) return;
+        done = true;
+        clearInterval(timer);
+        el.style.opacity = '0';
+        setTimeout(function () { el.remove(); }, 250);
+    }
+    var timer;
+    function mount() {
+        if (document.getElementById('wangp_page_skeleton')) return;
+        var host = document.createElement('div');
+        host.innerHTML = HTML;
+        var el = host.firstChild;
+        document.body.insertBefore(el, document.body.firstChild);
+        var started = Date.now();
+        timer = setInterval(function () {
+            if (document.querySelector('#family_list') || Date.now() - started >= 20000) remove(el);
+        }, 100);
+        setTimeout(function () { remove(el); }, 20000);
+    }
+    // Mount as soon as <body> exists (module scripts delay DOMContentLoaded); DOMContentLoaded is the fallback.
+    if (document.body) mount();
+    else {
+        var mo = new MutationObserver(function () { if (document.body) { mo.disconnect(); mount(); } });
+        mo.observe(document.documentElement, {childList: true});
+        document.addEventListener('DOMContentLoaded', function () { mo.disconnect(); mount(); });
+    }
+})();
+"""
+
+
+def get_head_html():
+    return '<style>' + _HEAD_STYLE + '</style><script>' + _HEAD_JS + '</script>'
+
 
 def get_javascript():
-    return _JS_CORE + _JS_MODEL_SWITCH + _JS_DIMMING
+    return _JS_CORE + _JS_MODEL_SWITCH + _JS_DIMMING + _JS_GALLERY
 
 
 def get_css():
-    return _CSS_CORE + _CSS_DIMMING
+    return _CSS_CORE + _CSS_DIMMING + _CSS_GALLERY
 
 
 def start_js(key, target):

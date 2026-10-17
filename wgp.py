@@ -14268,7 +14268,7 @@ def create_ui():
     else:
         stats_app = None
 
-    with ui_studio.Blocks(css=css, js=js, theme=theme, title="WanGP", fill_width=True) as main:
+    with ui_studio.Blocks(css=css, js=js, theme=theme, title="WanGP", fill_width=True, head=busy_states.get_head_html() if UI_theme == "dark_clay" else None) as main:
         gr.Markdown(f'<div align=center><H1>Wan<SUP style="color: #2563eb;">GP</SUP> v{WanGP_version} <FONT SIZE=4>by <I>DeepBeepMeep</I></FONT> <FONT SIZE=3>') # (<A HREF='https://github.com/deepbeepmeep/Wan2GP'>Updates</A>)</FONT SIZE=3></H1></div>")
         global model_list
 
