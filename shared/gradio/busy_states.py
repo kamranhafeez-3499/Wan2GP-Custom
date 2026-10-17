@@ -68,7 +68,7 @@ _JS_CORE = """
 })();
 """
 
-_CSS_CORE = """
+_CSS_CORE = r"""
 .wangp-busy { pointer-events: none; position: relative; box-shadow: inset 3px 3px 6px rgba(0,0,0,.35), inset -2px -2px 5px rgba(255,255,255,.07) !important; }
 .wangp-busy .wangp-studio-icon::before { display: none; }
 .wangp-busy::before { content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 8px; border-radius: 50%; border: 2.5px solid currentColor; border-right-color: transparent; animation: wangp-spin .7s linear infinite; flex: none; vertical-align: middle; }
