@@ -18,7 +18,7 @@ _JS_CORE = """
     const startObserver = () => {
         if (!document.body) return document.addEventListener('DOMContentLoaded', startObserver, {once: true});
         new MutationObserver((records) => {
-            for (const r of records) for (const n of r.addedNodes) if (isError(n)) lastErrorAt = performance.now();
+            for (const r of records) for (const n of r.addedNodes) if (isError(n)) { lastErrorAt = performance.now(); for (const k of [...active.keys()]) end(k, {ok: false}); }
         }).observe(document.body, {childList: true, subtree: true});
     };
     startObserver();
@@ -153,10 +153,32 @@ def mark_busy(component, key, target=None):
     return component
 
 
+def _chain_tail(app, root, ends):
+    # Tail of the longest .then/.success path below root (ties: most recently registered fn).
+    children = {}
+    for f in app.fns.values():
+        if f.trigger_after is not None and f._id not in ends:
+            children.setdefault(f.trigger_after, []).append(f)
+
+    def longest(f, seen):
+        best = (0, f._id, f)
+        for c in children.get(f._id, []):
+            if c._id in seen:
+                continue
+            d, _, t = longest(c, seen | {c._id})
+            cand = (d + 1, t._id, t)
+            if cand[:2] > best[:2]:
+                best = cand
+        return best
+
+    return longest(root, {root._id})[2]
+
+
 def _wire(app):
     wired = app.__dict__.setdefault('_wangp_busy_wired', set())
+    ends = app.__dict__.setdefault('_wangp_busy_ends', set())
     for fn in list(app.fns.values()):
-        if fn._id in wired:
+        if fn._id in wired or fn._id in ends:
             continue
         marked = None
         for block_id, event in fn.targets:
@@ -172,7 +194,9 @@ def _wire(app):
             fn.js = start_js(key, target)
         else:
             fn.js = '(...a) => { window.wangpBusy?.start(%s, %s); return (%s)(...a); }' % (json.dumps(key), json.dumps(target), fn.js)
-        app.default_config.set_event_trigger([EventListenerMethod(None, 'then')], None, None, None, js=end_js(key), trigger_after=fn._id, trigger_only_on_success=False, queue=False, api_name=False)
+        tail = _chain_tail(app, fn, ends)
+        app.default_config.set_event_trigger([EventListenerMethod(None, 'then')], None, None, None, js=end_js(key), trigger_after=tail._id, trigger_only_on_success=False, queue=False, api_name=False)
+        ends.update(f._id for f in app.fns.values() if f._id not in wired and f._id not in ends and f.js == end_js(key) and f.trigger_after == tail._id)
 
 
 def install():
