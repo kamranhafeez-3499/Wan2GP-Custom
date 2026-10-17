@@ -169,20 +169,18 @@ _JS_DIMMING = r"""
         if (na) { btn.setAttribute('aria-disabled', 'true'); btn.setAttribute('data-wangp-tip', 'Nothing is loaded in RAM'); }
         else { btn.removeAttribute('aria-disabled'); btn.removeAttribute('data-wangp-tip'); }
     };
+    let lastRaw = null;
     const readCaps = () => {
         const ta = document.querySelector('#wangp_model_caps textarea, #wangp_model_caps input');
-        if (!ta || !ta.value) return;
-        try { state = JSON.parse(ta.value); } catch (e) { return; }
-        applyTabs();
+        if (!ta || !ta.value || ta.value === lastRaw) return;
+        try { state = JSON.parse(ta.value); lastRaw = ta.value; } catch (e) { return; }
     };
-    let queued = false;
-    const refresh = () => {
-        if (queued) return;
-        queued = true;
-        requestAnimationFrame(() => { queued = false; readCaps(); applyTabs(); applyUnload(); });
-    };
+    // Polling instead of a document-wide MutationObserver: Gradio's form rebuild fires thousands of
+    // mutations and observer callbacks sat on the critical path. The textarea value changes without
+    // DOM mutations anyway, and classList/attribute writes below are no-ops when nothing changed.
+    const refresh = () => { if (document.hidden) return; readCaps(); applyTabs(); applyUnload(); };
     document.addEventListener('input', (e) => { if (e.target?.closest?.('#wangp_model_caps')) refresh(); }, true);
-    new MutationObserver(refresh).observe(document.documentElement, {subtree: true, childList: true, characterData: true});
+    setInterval(refresh, 250);
     refresh();
 })();
 """
