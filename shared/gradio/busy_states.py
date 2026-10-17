@@ -118,6 +118,8 @@ _CSS_CORE = r"""
 .wangp-busy-done { color: #6fdcb0 !important; }
 .wangp-busy-done .wangp-studio-icon::before { display: none; }
 .wangp-busy-done::before { content: "\2713"; display: inline-block; margin-right: 8px; font-weight: 900; }
+#model_list.wangp-busy::before, #model_list.wangp-busy-done::before { position: absolute; top: 50%; right: 14px; z-index: 3; margin: -7px 0 0 0; line-height: 14px; }
+#model_list.wangp-busy .icon-wrap, #model_list.wangp-busy-done .icon-wrap { opacity: 0; }
 .wangp-skeleton { position: relative; overflow: hidden; pointer-events: none; filter: saturate(.6); }
 .wangp-skeleton > * { opacity: .25; transition: opacity .2s; }
 .wangp-skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(155,140,255,.10) 40%, rgba(255,255,255,.07) 50%, transparent 70%); animation: wangp-shimmer 1.3s ease-in-out infinite; pointer-events: none; }
