@@ -222,13 +222,10 @@ _JS_GALLERY = r"""
         const timer = setTimeout(done, 10000);  // never leave media hidden behind the shimmer
         for (const ev of ['load', 'loadedmetadata', 'loadeddata', 'error']) media.addEventListener(ev, done, {once: true});
     };
-    let queued = false;
-    const scan = () => {
-        if (queued) return;
-        queued = true;
-        requestAnimationFrame(() => { queued = false; document.querySelectorAll(SEL).forEach(watch); });
-    };
-    new MutationObserver(scan).observe(document.documentElement, {subtree: true, childList: true});
+    // Poll instead of a document-wide subtree observer: new thumbnails are picked up within 500 ms and the
+    // form rebuild of a model switch no longer triggers a scan per mutation burst.
+    const scan = () => { if (!document.hidden) document.querySelectorAll(SEL).forEach(watch); };
+    setInterval(scan, 500);
     scan();
 })();
 """
