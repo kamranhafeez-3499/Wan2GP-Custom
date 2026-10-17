@@ -7,6 +7,7 @@ from typing import Callable
 import gradio as gr
 
 from shared import model_dropdowns
+from shared.gradio import busy_states
 
 
 FILTER_ICONS = {
@@ -130,6 +131,7 @@ def create_filter(selected_filter, filters, deps=None):
             apply_button = gr.Button("Apply model output filter", elem_id="wangp_model_output_filter_apply")
             refresh_trigger = gr.Textbox(value="", show_label=False, elem_id="wangp_model_output_filter_refresh")
             downloaded_only_button = gr.Button("Toggle downloaded models only", elem_id="wangp_downloaded_only_apply")
+            busy_states.mark_busy(downloaded_only_button, "downloaded_only", "#wangp_model_output_filter [data-downloaded-only-toggle]")
     return ModelOutputFilterControls(filter_html, target, apply_button, refresh_trigger, downloaded_only_button)
 
 
