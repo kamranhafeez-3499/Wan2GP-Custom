@@ -187,9 +187,12 @@ _JS_DIMMING = r"""
     // Polling instead of a document-wide MutationObserver: Gradio's form rebuild fires thousands of
     // mutations and observer callbacks sat on the critical path. The textarea value changes without
     // DOM mutations anyway, and classList/attribute writes below are no-ops when nothing changed.
-    const refresh = () => { if (document.hidden) return; readCaps(); applyTabs(); applyUnload(); };
+    let switching = false;
+    const refresh = () => { if (document.hidden || switching) return; readCaps(); applyTabs(); applyUnload(); };
     document.addEventListener('input', (e) => { if (e.target?.closest?.('#wangp_model_caps')) refresh(); }, true);
-    setInterval(refresh, 250);
+    window.addEventListener('wangp:model-switch-start', () => { switching = true; setTimeout(() => { switching = false; }, 20000); });
+    window.addEventListener('wangp:model-switch-end', () => { switching = false; setTimeout(refresh, 150); setTimeout(refresh, 600); });
+    setInterval(refresh, 400);
     refresh();
 })();
 """
