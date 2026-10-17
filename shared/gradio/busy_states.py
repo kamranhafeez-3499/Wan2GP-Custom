@@ -99,13 +99,13 @@ _JS_MODEL_SWITCH = r"""
         if (!el) return;
         const name = freshPick();
         // Only a fresh pick may overwrite a line already shown in this busy period.
-        if (name || el.style.display === 'none') el.textContent = 'Switching to ' + (name || fallbackName()) + '… rebuilding settings';
-        el.style.display = '';
+        if (name || !el.classList.contains('wangp-on')) el.textContent = 'Switching to ' + (name || fallbackName()) + '… rebuilding settings';
+        el.classList.add('wangp-on');
     });
     window.addEventListener('wangp:model-switch-end', () => {
         window.wangpBusy?.end('model');
         const el = document.getElementById('wangp_switching_line');
-        if (el) el.style.display = 'none';
+        if (el) el.classList.remove('wangp-on');
         lastPicked = '';
     });
 })();
@@ -126,6 +126,7 @@ _CSS_CORE = r"""
 @keyframes wangp-spin { to { transform: rotate(360deg); } }
 @keyframes wangp-shimmer { to { transform: translateX(100%); } }
 #wangp_switching_line { color: #c4baff; font-size: 13px; font-weight: bold; padding: 4px 2px; }
+#wangp_switching_line.wangp-on { display: block !important; }
 @media (prefers-reduced-motion: reduce) {
     .wangp-busy::before { animation: none; border-right-color: currentColor; opacity: .6; }
     .wangp-skeleton::after { animation: none; transform: none; }
