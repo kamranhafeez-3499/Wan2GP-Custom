@@ -324,3 +324,68 @@ h1 > sup {
 @media (prefers-reduced-motion: reduce) {
     .wangp-studio-button { transition: none; transform: none !important; }
 }
+
+/* ---------- progress / status card ---------- */
+.gradio-container .block.wangp-progress-container {
+    background: #2c2d3c !important;
+    border: 0 !important;
+    border-radius: 18px !important;
+    box-shadow: var(--clay-puff) !important;
+}
+.wangp-progress,
+.gradio-container .block.wangp-progress-container .wangp-progress {
+    --block-background-fill: #2c2d3c;
+    --block-border-width: 0px;
+    --block-radius: 18px;
+    --block-shadow: var(--clay-puff);
+    --color-accent: #9b8cff;
+    background: #2c2d3c;
+    border-radius: 18px;
+    color: #eceaf6;
+}
+.wangp-progress .progress-track {
+    border: 0;
+    border-radius: 999px;
+    background: #1c1d27;
+    box-shadow: var(--clay-dent);
+}
+.wangp-progress .progress-fill {
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7f6cf5, #9b8cff, #b8adff);
+    box-shadow: none;
+}
+.wangp-progress:has(.progress-speed) .progress-fill {
+    background: linear-gradient(90deg, #e0a040, #ffc46b);
+}
+.wangp-progress .indeterminate .progress-fill {
+    background: linear-gradient(90deg, #7f6cf5, #9b8cff, #b8adff);
+}
+.wangp-progress .progress-details,
+.wangp-progress .progress-timing {
+    color: #a9a6c2;
+    font-weight: 700;
+}
+.wangp-progress .progress-title {
+    font-weight: 800;
+}
+
+/* ---------- no hairline under any tab strip ---------- */
+.tab-container::after {
+    display: none !important;
+}
+
+/* ---------- info icons use the accent instead of Gradio blue ---------- */
+.gradio-container .wangp-model-info-trigger,
+.gradio-container .wangp-model-info-host > .wangp-model-info-trigger,
+.gradio-container .wangp-context-tool-info {
+    color: var(--studio-accent, #9b8cff) !important;
+    border-color: var(--studio-accent, #9b8cff) !important;
+}
+.gradio-container button.wangp-context-tool.wangp-context-tool-info,
+.gradio-container button.wangp-prompt-microphone:not(.is-recording),
+.gradio-container button.resolution-picker-toggle {
+    color: var(--studio-accent, #9b8cff) !important;
+}
+.gradio-container button.sm.secondary.resolution-picker-toggle.resolution-picker-toggle {
+    color: var(--studio-accent, #9b8cff) !important;
+}
