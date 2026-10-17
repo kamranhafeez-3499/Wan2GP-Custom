@@ -32,9 +32,16 @@ _JS_CORE = """
     };
     attachToasts();
     setInterval(attachToasts, 1000);
+    // Safari / macOS Firefox do not focus a button on click, so remember the last pressed button ourselves.
+    let lastPressed = null, lastPressedAt = 0;
+    document.addEventListener('pointerdown', (e) => {
+        lastPressed = e.target?.closest?.('button') || null;
+        lastPressedAt = performance.now();
+    }, true);
     const resolve = (target) => {
         try {
             if (target) return document.querySelector(target);
+            if (lastPressed?.isConnected && performance.now() - lastPressedAt < 1000) return lastPressed;
             return document.activeElement?.closest?.('button') || null;
         } catch (e) { return null; }
     };
@@ -65,7 +72,7 @@ _JS_CORE = """
         }, SPINNER_MS));
         if (opts.skeleton) {
             s.timers.push(setTimeout(() => {
-                try { s.skeletonEl = document.querySelector(opts.skeleton); } catch (e) {}
+                try { s.skeletonEl = typeof opts.skeleton === 'function' ? opts.skeleton() : document.querySelector(opts.skeleton); } catch (e) {}
                 s.skeletonEl?.classList.add('wangp-skeleton');
             }, SKELETON_MS));
         }
@@ -86,11 +93,22 @@ _JS_MODEL_SWITCH = r"""
     let lastPicked = '', pickedAt = 0;
     document.addEventListener('mousedown', (e) => {
         const li = e.target?.closest?.(PICK);
-        if (li) { lastPicked = (li.textContent || '').trim(); pickedAt = performance.now(); }
+        if (li) { lastPicked = cleanName(li.textContent); pickedAt = performance.now(); }
     }, true);
     // Enqueue follows the pick within one round trip, so a pick older than 2 s is stale.
     const freshPick = () => (lastPicked && performance.now() - pickedAt < 2000) ? lastPicked : '';
-    const fallbackName = () => (document.querySelector('#model_list input')?.value || '').trim();
+    const fallbackName = () => cleanName(document.querySelector('#model_list input')?.value);
+    const STATUS_PREFIX = /^[\u2B1B\u{1F7E6}\u{1F7E8}\s]+/u;
+    const cleanName = (t) => (t || '').replace(STATUS_PREFIX, '').trim();
+    // The settings column carries .wangp-actions-column only with the floating generate button; otherwise
+    // use the first row after the model selector that holds the prompt textarea.
+    const settingsColumn = () => {
+        const fixed = document.querySelector('.wangp-actions-column');
+        if (fixed) return fixed;
+        let row = document.querySelector('#family_list')?.closest?.('.row')?.nextElementSibling;
+        for (; row; row = row.nextElementSibling) if (row.querySelector('textarea')) return row.querySelector('.column') || row;
+        return null;
+    };
     const lineEl = () => {
         let el = document.getElementById('wangp_switching_line');
         if (el) return el;
@@ -103,7 +121,7 @@ _JS_MODEL_SWITCH = r"""
         return el;
     };
     window.addEventListener('wangp:model-switch-start', () => {
-        window.wangpBusy?.start('model', '#model_list', {skeleton: '.wangp-actions-column', timeoutMs: 120000});
+        window.wangpBusy?.start('model', '#model_list', {skeleton: settingsColumn, timeoutMs: 120000});
         const el = lineEl();
         if (!el) return;
         const name = freshPick();
@@ -264,6 +282,7 @@ _HEAD_JS = r"""
         if (done) return;
         done = true;
         clearInterval(timer);
+        el.style.pointerEvents = 'none';
         el.style.opacity = '0';
         setTimeout(function () { el.remove(); }, 250);
     }
@@ -276,7 +295,9 @@ _HEAD_JS = r"""
         document.body.insertBefore(el, document.body.firstChild);
         var started = Date.now();
         timer = setInterval(function () {
-            if (document.querySelector('#family_list') || Date.now() - started >= 20000) remove(el);
+            // #family_list exists only in the normal build; --lock-model renders the main tabs without it.
+            var ready = document.querySelector('#family_list') || (document.querySelector('[role="tab"]') && Date.now() - started >= 1500);
+            if (ready || Date.now() - started >= 20000) remove(el);
         }, 100);
         setTimeout(function () { remove(el); }, 20000);
     }
