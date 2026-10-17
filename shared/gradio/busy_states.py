@@ -73,12 +73,17 @@ _JS_MODEL_SWITCH = r"""
     if (window.wangpModelSwitchWired) return;
     window.wangpModelSwitchWired = true;
     const PICK = '#family_list li.item, #model_base_types_list li.item, #model_list li.item';
-    let lastPicked = '';
-    document.addEventListener('click', (e) => {
+    let lastPicked = '', pickedAt = 0;
+    document.addEventListener('mousedown', (e) => {
         const li = e.target?.closest?.(PICK);
-        if (li) lastPicked = (li.textContent || '').trim();
+        if (li) { lastPicked = (li.textContent || '').trim(); pickedAt = performance.now(); }
     }, true);
-    const currentName = () => lastPicked || (document.querySelector('#model_list input')?.value || '').trim();
+    const currentName = () => {
+        const fresh = lastPicked && performance.now() - pickedAt < 2000;
+        const name = fresh ? lastPicked : (document.querySelector('#model_list input')?.value || '').trim();
+        lastPicked = '';
+        return name;
+    };
     const lineEl = () => {
         let el = document.getElementById('wangp_switching_line');
         if (el) return el;
@@ -101,7 +106,6 @@ _JS_MODEL_SWITCH = r"""
         window.wangpBusy?.end('model');
         const el = document.getElementById('wangp_switching_line');
         if (el) el.style.display = 'none';
-        lastPicked = '';
     });
 })();
 """
