@@ -7,14 +7,75 @@ from urllib.parse import quote
 import gradio as gr
 
 css_path = Path(__file__).with_name('ui_studio.css')
-THEME_CHOICES = [('Blue Sky (Default)', 'default'), ('Classic Gradio', 'gradio'), ('Emerald', 'emerald'), ('Amethyst', 'amethyst'), ('Rose', 'rose')]
+THEME_CHOICES = [('Blue Sky (Default)', 'default'), ('Classic Gradio', 'gradio'), ('Emerald', 'emerald'), ('Amethyst', 'amethyst'), ('Rose', 'rose'), ('Dark Clay', 'dark_clay')]
 AZURE = gr.themes.colors.Color(name='azure', c50='#f1f7fc', c100='#d9ebfa', c200='#c2ddf5', c300='#91bce2', c400='#69a8df', c500='#357fc4', c600='#2b6ba8', c700='#205786', c800='#19466d', c900='#153956', c950='#10283e')
-THEME_HUES = {'default': AZURE, 'emerald': 'emerald', 'amethyst': 'violet', 'rose': 'rose'}
+LILAC = gr.themes.colors.Color(name='lilac', c50='#f4f2ff', c100='#e9e6ff', c200='#d6d0ff', c300='#c4baff', c400='#b0a4ff', c500='#9b8cff', c600='#7f6cf5', c700='#6a57dc', c800='#5442b3', c900='#43358c', c950='#2a2160')
+CLAY = gr.themes.colors.Color(name='clay', c50='#eceaf6', c100='#d6d4e6', c200='#b9b7cf', c300='#9a98b4', c400='#6f6d88', c500='#4a4a60', c600='#3a3b4e', c700='#323345', c800='#2c2d3c', c900='#22232f', c950='#1c1d27')
+THEME_HUES = {'default': AZURE, 'emerald': 'emerald', 'amethyst': 'violet', 'rose': 'rose', 'dark_clay': LILAC}
+DARK_THEMES = {'dark_clay'}
+
+# Dark Clay: puffy surfaces (outer drop + inner light/shade) and pressed-in inputs.
+CLAY_SHADOWS = {
+    'puff': '8px 10px 22px rgba(0,0,0,.45), inset 4px 4px 8px rgba(255,255,255,.07), inset -4px -4px 8px rgba(0,0,0,.35)',
+    'puff_small': '3px 4px 10px rgba(0,0,0,.4), inset 2px 2px 4px rgba(255,255,255,.07), inset -2px -2px 4px rgba(0,0,0,.35)',
+    'dent': 'inset 3px 3px 7px rgba(0,0,0,.35), inset -3px -3px 7px rgba(255,255,255,.07)',
+    'pressed': 'inset 3px 3px 6px rgba(0,0,0,.35), inset -2px -2px 5px rgba(255,255,255,.07)',
+    'ring': '0 0 0 3px rgba(155,140,255,.45)',
+    'float': '0 18px 40px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.35)',
+}
+CLAY_VALUES = {
+    'body_background_fill': '#22232f', 'body_text_color': '#eceaf6', 'body_text_color_subdued': '#9a98b4',
+    'background_fill_primary': '#2c2d3c', 'background_fill_secondary': '#22232f',
+    'border_color_primary': '#3a3b4e', 'border_color_accent': '#9b8cff',
+    'block_background_fill': '#2c2d3c', 'block_border_color': 'transparent', 'block_border_width': '0px',
+    'block_shadow': 'none', 'block_label_text_color': '#c4baff', 'block_title_text_color': '#c4baff',
+    'block_label_background_fill': 'transparent', 'block_title_background_fill': 'transparent',
+    'input_background_fill': '#1c1d27', 'input_background_fill_focus': '#1c1d27', 'input_border_color': 'transparent',
+    'input_border_color_focus': 'transparent', 'input_shadow': CLAY_SHADOWS['dent'],
+    'input_shadow_focus': CLAY_SHADOWS['dent'] + ', ' + CLAY_SHADOWS['ring'], 'input_placeholder_color': '#6f6d88',
+    'button_primary_background_fill': 'linear-gradient(135deg, #b8adff, #9b8cff 50%, #7f6cf5)',
+    'button_primary_background_fill_hover': 'linear-gradient(135deg, #c4baff, #a99cff 50%, #8b7af7)',
+    'button_primary_text_color': '#16151f', 'button_primary_border_color': 'transparent',
+    'button_primary_shadow': '0 8px 20px rgba(155,140,255,.32), inset 3px 3px 6px rgba(255,255,255,.4), inset -3px -4px 8px rgba(0,0,0,.2)',
+    'button_primary_shadow_hover': '0 10px 24px rgba(155,140,255,.4), inset 3px 3px 6px rgba(255,255,255,.4), inset -3px -4px 8px rgba(0,0,0,.2)',
+    'button_primary_shadow_active': 'inset 3px 4px 8px rgba(0,0,0,.3), inset -2px -2px 4px rgba(255,255,255,.25)',
+    'button_secondary_background_fill': '#323345', 'button_secondary_background_fill_hover': '#38394d',
+    'button_secondary_text_color': '#eceaf6', 'button_secondary_border_color': 'transparent',
+    'button_secondary_shadow': CLAY_SHADOWS['puff_small'], 'button_secondary_shadow_active': CLAY_SHADOWS['pressed'],
+    'button_cancel_background_fill': '#323345', 'button_cancel_text_color': '#ff8a9a',
+    'slider_color': '#9b8cff', 'checkbox_background_color': '#1c1d27', 'checkbox_background_color_selected': '#9b8cff',
+    'checkbox_border_color': '#3a3b4e', 'checkbox_border_color_selected': '#9b8cff',
+    'checkbox_label_background_fill': '#323345', 'checkbox_label_background_fill_selected': '#3d3a5e',
+    'checkbox_label_text_color_selected': '#eceaf6', 'color_accent': '#9b8cff', 'color_accent_soft': '#3d3a5e',
+    'panel_background_fill': '#2c2d3c', 'panel_border_color': 'transparent',
+    'shadow_drop': CLAY_SHADOWS['puff_small'], 'shadow_drop_lg': CLAY_SHADOWS['float'],
+    'table_even_background_fill': '#2c2d3c', 'table_odd_background_fill': '#272836',
+    'link_text_color': '#c4baff', 'link_text_color_hover': '#e9e6ff', 'loader_color': '#9b8cff',
+    'stat_background_fill': '#3d3a5e', 'error_background_fill': '#3a2530', 'error_text_color': '#ff8a9a', 'error_border_color': '#7a3c4a',
+    'accordion_text_color': '#c4baff', 'code_background_fill': '#1c1d27',
+}
+
+
+def create_dark_clay_theme(**sizes):
+    sizes['radius_size'] = gr.themes.Size('4px', '6px', '10px', '14px', '18px', '22px', '28px', name='clay_radius')
+    theme = gr.themes.Soft(font=[gr.themes.GoogleFont('Nunito'), gr.themes.Font('Segoe UI'), gr.themes.Font('system-ui'), gr.themes.Font('sans-serif')], primary_hue=LILAC, secondary_hue=LILAC, neutral_hue=CLAY, **sizes)
+    # Same values in light and dark mode: the theme always renders dark.
+    theme.set(**CLAY_VALUES, **{f'{key}_dark': value for key, value in CLAY_VALUES.items() if hasattr(theme, f'{key}_dark')})
+    theme.name = 'dark_clay'
+    return theme
+
+
+def get_theme_javascript(name):
+    if name not in DARK_THEMES:
+        return ""
+    return "\n(function () { document.body.classList.add('dark'); document.documentElement.style.colorScheme = 'dark'; })();\n"
 
 
 def create_theme(name, **sizes):
     if name == 'gradio':
         return None
+    if name == 'dark_clay':
+        return create_dark_clay_theme(**sizes)
     theme = gr.themes.Soft(font=['Verdana'], primary_hue=THEME_HUES[name], secondary_hue=AZURE if name == 'default' else 'indigo', neutral_hue='slate', **sizes)
     if name == 'default':
         theme.set(background_fill_primary='*neutral_50', slider_color_dark='*primary_400', checkbox_label_background_fill_selected='*primary_600')
@@ -100,7 +161,7 @@ def style_config(config, theme):
     css = css_path.read_text(encoding='utf8')
     if isinstance(theme, gr.themes.Default):
         css += '\n' + css_path.with_name('ui_studio_classic.css').read_text(encoding='utf8')
-    elif theme.name in ('emerald', 'amethyst', 'rose'):
+    elif theme.name in ('emerald', 'amethyst', 'rose', 'dark_clay'):
         css += '\n' + css_path.with_name(f'ui_studio_{theme.name}.css').read_text(encoding='utf8')
     css += '\n' + '\n'.join(icon_css)
     config['css'] = (config['css'] or '') + '\n' + re.sub(r'\.wangp-studio-[a-z0-9-]+', selector, css)

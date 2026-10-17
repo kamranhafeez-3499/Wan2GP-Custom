@@ -13895,7 +13895,7 @@ def generate_media_tab(update_form = False, state_dict = None, ui_defaults = Non
                 model_family.select(fn=change_model_family_target, inputs=[state], outputs=[model_choice_target], show_progress="hidden", queue=False)
                 model_base_type_choice.select(fn=change_model_base_types_target, inputs=[state], outputs=[model_choice_target], show_progress="hidden", queue=False)
                 if model_filter is not None:
-                    model_output_filter.bind_filter(model_filter, deps_factory=_get_dropdown_deps, state=state, model_choice_target=model_choice_target, current_model_type_getter=get_state_model_type)
+                    model_output_filter.bind_filter(model_filter, deps_factory=_get_dropdown_deps, state=state, model_choice_target=model_choice_target, current_model_type_getter=get_state_model_type, refresh_models_trigger=refresh_models_trigger)
                 refresh_models_trigger.change(fn=refresh_model_dropdowns, inputs=[state], outputs=[model_family, model_base_type_choice, model_choice, refresh_form_trigger], show_progress="hidden")
 
                 model_choice.select(fn=change_model_choice_target, outputs=[model_choice_target], show_progress="hidden", queue=False)
@@ -14085,6 +14085,7 @@ def _get_dropdown_deps():
         get_model_name=get_model_name,
         get_transformer_dtype=get_transformer_dtype,
         list_model_defs=list_model_defs,
+        save_server_config=lambda: write_config(server_config, server_config_filename),
     )
 
 def _get_finetune_editor_deps():
@@ -14246,6 +14247,7 @@ def create_ui():
     js += model_output_filter.get_javascript()
     js += model_selector_toolbar.get_javascript()
     js += finetune_editor.get_javascript()
+    js += ui_studio.get_theme_javascript(UI_theme)
     StripGallery.install_gradio_upload_mtime_patch()
     app.initialize_plugins(globals())
     plugin_js = ""
@@ -14280,7 +14282,7 @@ def create_ui():
                         model_family = gr.Dropdown(visible=False, value= "")
                         model_choice = gr.Dropdown(visible=False, value= transformer_type, choices= [transformer_type])
                     else:
-                        model_filter = model_output_filter.create_filter(model_dropdowns.get_model_output_filter(_get_dropdown_deps()), model_dropdowns.available_output_filters(_get_dropdown_deps()))
+                        model_filter = model_output_filter.create_filter(model_dropdowns.get_model_output_filter(_get_dropdown_deps()), model_dropdowns.available_output_filters(_get_dropdown_deps()), _get_dropdown_deps())
                         model_family, model_base_type_choice, model_choice = generate_dropdown_model_list(transformer_type)
                         model_toolbar = model_selector_toolbar.create_toolbar(is_finetune_editor=finetune_editor.is_finetune_model(_get_finetune_editor_deps(), transformer_type))
                 if model_toolbar is not None:

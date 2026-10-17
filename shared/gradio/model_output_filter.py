@@ -44,6 +44,14 @@ FILTER_ICONS = {
     """,
 }
 
+DOWNLOADED_ONLY_ICON = """
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4v10"/>
+            <path d="m7.5 10 4.5 4.5 4.5-4.5"/>
+            <path d="M5 16v3h14v-3"/>
+        </svg>
+    """
+
 FILTER_LABELS = {
     model_dropdowns.MODEL_OUTPUT_FILTER_ALL: "All model families",
     model_dropdowns.MODEL_OUTPUT_FILTER_VIDEO: "Movie model families",
@@ -59,9 +67,34 @@ class ModelOutputFilterControls:
     target: gr.Textbox
     apply_button: gr.Button
     refresh_trigger: gr.Textbox
+    downloaded_only_button: gr.Button
 
 
 _displayed_filters = [model_dropdowns.MODEL_OUTPUT_FILTER_ALL, model_dropdowns.MODEL_OUTPUT_FILTER_VIDEO, model_dropdowns.MODEL_OUTPUT_FILTER_IMAGE, model_dropdowns.MODEL_OUTPUT_FILTER_AUDIO]
+_downloaded_only_state = {"enabled": True, "fallback": False}
+
+
+def _render_downloaded_only_toggle():
+    enabled, fallback = _downloaded_only_state["enabled"], _downloaded_only_state["fallback"]
+    if not enabled:
+        label = "Showing all models (click to show downloaded models only)"
+    elif fallback:
+        label = "No models downloaded yet: showing all models"
+    else:
+        label = "Showing downloaded models only (click to show all models)"
+    classes = "wangp-model-output-filter-link wangp-downloaded-only-toggle"
+    if enabled:
+        classes += " wangp-model-output-filter-link-active"
+    if fallback:
+        classes += " wangp-downloaded-only-fallback"
+    return "<button type='button' class='{classes}' data-downloaded-only-toggle='1' title='{label}' aria-label='{label}' aria-pressed='{pressed}'>{icon}</button>".format(
+        classes=classes, label=html.escape(label, quote=True), pressed=str(enabled).lower(), icon=DOWNLOADED_ONLY_ICON,
+    )
+
+
+def update_downloaded_only_state(deps, model_filter=None):
+    _downloaded_only_state["enabled"] = model_dropdowns.is_downloaded_only(deps)
+    _downloaded_only_state["fallback"] = model_dropdowns.is_downloaded_only_fallback(deps, model_filter)
 
 
 def render_filter(selected_filter):
@@ -79,20 +112,35 @@ def render_filter(selected_filter):
                 icon=FILTER_ICONS[filter_key],
             )
         )
-    return "<div class='wangp-model-output-filter' role='group' aria-label='Model family filter' style='grid-template-columns: repeat({0}, minmax(30px, 42px)); width: min(100%, {1}px)'>{2}</div>".format(len(_displayed_filters), 49 * len(_displayed_filters), "".join(items))
+    items.append("<span class='wangp-model-output-filter-divider' aria-hidden='true'></span>" + _render_downloaded_only_toggle())
+    cells = len(_displayed_filters) + 1
+    return "<div class='wangp-model-output-filter' role='group' aria-label='Model family filter' style='grid-template-columns: repeat({0}, minmax(30px, 42px)) 9px minmax(30px, 42px); width: min(100%, {1}px)'>{2}</div>".format(len(_displayed_filters), 49 * cells + 9, "".join(items))
 
 
-def create_filter(selected_filter, filters):
+def create_filter(selected_filter, filters, deps=None):
     """`filters`: the filters to display (model_dropdowns.available_output_filters)."""
     global _displayed_filters
     _displayed_filters = list(filters)
-    with gr.Column(scale=2, min_width=210, elem_classes=["wangp-model-output-filter-wrap"]):
+    if deps is not None:
+        update_downloaded_only_state(deps, selected_filter)
+    with gr.Column(scale=2, min_width=250, elem_classes=["wangp-model-output-filter-wrap"]):
         filter_html = gr.HTML(value=render_filter(selected_filter), elem_id="wangp_model_output_filter")
         with gr.Row(visible=False, elem_classes=["wangp-model-output-filter-hidden-controls"]):
             target = gr.Textbox(value="", show_label=False, elem_id="wangp_model_output_filter_target")
             apply_button = gr.Button("Apply model output filter", elem_id="wangp_model_output_filter_apply")
             refresh_trigger = gr.Textbox(value="", show_label=False, elem_id="wangp_model_output_filter_refresh")
-    return ModelOutputFilterControls(filter_html, target, apply_button, refresh_trigger)
+            downloaded_only_button = gr.Button("Toggle downloaded models only", elem_id="wangp_downloaded_only_apply")
+    return ModelOutputFilterControls(filter_html, target, apply_button, refresh_trigger, downloaded_only_button)
+
+
+def toggle_downloaded_only(deps, state):
+    model_dropdowns.set_downloaded_only(deps, not model_dropdowns.is_downloaded_only(deps))
+    model_filter = model_dropdowns.get_model_output_filter(deps, state)
+    update_downloaded_only_state(deps, model_filter)
+    if _downloaded_only_state["fallback"]:
+        gr.Info("No models downloaded yet: showing all models")
+    model_dropdowns.debug_model_selector_event("filter.downloaded_only", enabled=_downloaded_only_state["enabled"], fallback=_downloaded_only_state["fallback"])
+    return gr.update(value=render_filter(model_filter)), str(time.time())
 
 
 def apply_filter_selection(deps, state, requested_filter, current_model_type_getter):
@@ -112,13 +160,15 @@ def refresh_for_model_target(deps, state, model_type):
     return f"{selected_filter}|{time.time()}" if changed else gr.update()
 
 
-def render_filter_from_trigger(refresh_value):
+def render_filter_from_trigger(deps, refresh_value):
     selected_filter = str(refresh_value or "").split("|", 1)[0]
+    if len(selected_filter) > 0:
+        update_downloaded_only_state(deps, selected_filter)
     model_dropdowns.debug_model_selector_event("filter.render_trigger", trigger=refresh_value, selected_filter=selected_filter)
     return gr.update(value=render_filter(selected_filter)) if len(selected_filter) > 0 else gr.update()
 
 
-def bind_filter(controls: ModelOutputFilterControls, *, deps_factory: Callable, state, model_choice_target, current_model_type_getter: Callable):
+def bind_filter(controls: ModelOutputFilterControls, *, deps_factory: Callable, state, model_choice_target, current_model_type_getter: Callable, refresh_models_trigger=None):
     controls.apply_button.click(
         fn=lambda state_value, requested_filter: apply_filter_selection(deps_factory(), state_value, requested_filter, current_model_type_getter),
         inputs=[state, controls.target],
@@ -126,8 +176,16 @@ def bind_filter(controls: ModelOutputFilterControls, *, deps_factory: Callable, 
         trigger_mode="always_last",
         show_progress="hidden",
     )
+    if refresh_models_trigger is not None:
+        controls.downloaded_only_button.click(
+            fn=lambda state_value: toggle_downloaded_only(deps_factory(), state_value),
+            inputs=[state],
+            outputs=[controls.html, refresh_models_trigger],
+            trigger_mode="always_last",
+            show_progress="hidden",
+        )
     controls.refresh_trigger.change(
-        fn=render_filter_from_trigger,
+        fn=lambda refresh_value: render_filter_from_trigger(deps_factory(), refresh_value),
         inputs=[controls.refresh_trigger],
         outputs=[controls.html],
         trigger_mode="always_last",
@@ -172,6 +230,24 @@ def get_javascript():
             }
             return event.target?.closest?.("#wangp_model_output_filter [data-model-output-filter]");
         }
+
+        function eventDownloadedOnlyToggle(event) {
+            const path = event.composedPath ? event.composedPath() : [];
+            for (const node of path) {
+                if (node?.matches?.("#wangp_model_output_filter [data-downloaded-only-toggle]")) return node;
+            }
+            return event.target?.closest?.("#wangp_model_output_filter [data-downloaded-only-toggle]");
+        }
+
+        document.addEventListener("click", (event) => {
+            const toggle = eventDownloadedOnlyToggle(event);
+            if (!toggle) return;
+            event.preventDefault();
+            const el = root().querySelector("#wangp_downloaded_only_apply");
+            const button = el?.matches("button") ? el : el?.querySelector("button");
+            toggle.blur();
+            button?.click();
+        });
 
         document.addEventListener("click", (event) => {
             const link = eventFilterLink(event);
@@ -285,5 +361,17 @@ def get_css():
     }
     .wangp-model-output-filter-hidden-controls {
         display: none !important;
+    }
+    .wangp-model-output-filter-divider {
+        justify-self: center;
+        width: 1px;
+        height: 22px;
+        background: var(--border-color-primary, #444);
+    }
+    .wangp-downloaded-only-fallback {
+        opacity: 0.58;
+    }
+    .wangp-downloaded-only-fallback svg {
+        stroke-dasharray: 3 2;
     }
     """

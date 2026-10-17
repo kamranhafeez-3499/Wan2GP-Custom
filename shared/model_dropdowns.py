@@ -23,6 +23,7 @@ MODEL_OUTPUT_FILTER_AUDIO = "audio"
 MODEL_OUTPUT_FILTER_3D = "3d"
 MODEL_OUTPUT_FILTERS = {MODEL_OUTPUT_FILTER_ALL, MODEL_OUTPUT_FILTER_VIDEO, MODEL_OUTPUT_FILTER_IMAGE, MODEL_OUTPUT_FILTER_AUDIO, MODEL_OUTPUT_FILTER_3D}
 LAST_MODEL_PER_OUTPUT_FILTER_CONFIG_KEY = "last_model_per_output_filter"
+DOWNLOADED_ONLY_CONFIG_KEY = "downloaded_models_only"
 MODEL_SELECTOR_DEBUG = False
 _model_selector_debug_seq = 0
 
@@ -64,6 +65,7 @@ class DropdownDeps:
     get_model_name: callable
     get_transformer_dtype: callable
     list_model_defs: callable = None
+    save_server_config: callable = None
 
 
 def compact_name(family_name, model_name):
@@ -197,12 +199,51 @@ def model_type_matches_output_filter(deps, model_type, model_filter):
     return allowed_model_types is None or model_type in allowed_model_types
 
 
-def get_filtered_dropdown_model_types(deps, model_filter=None, dropdown_types=None):
+def is_downloaded_only(deps):
+    return bool(deps.server_config.get(DOWNLOADED_ONLY_CONFIG_KEY, True))
+
+
+def set_downloaded_only(deps, enabled):
+    deps.server_config[DOWNLOADED_ONLY_CONFIG_KEY] = bool(enabled)
+    if deps.save_server_config is not None:
+        deps.save_server_config()
+
+
+def _downloaded_model_types(deps, model_types):
+    direct_status_map, _ = get_model_download_status_maps(deps, model_types)
+    return [model_type for model_type in model_types if direct_status_map.get(model_type, MODEL_FILE_STATUS_MISSING) != MODEL_FILE_STATUS_MISSING]
+
+
+def filter_downloaded_model_types(deps, model_types):
+    """Keeps the (fully or partially) downloaded models; falls back to every model when none is downloaded."""
+    if not is_downloaded_only(deps):
+        return model_types
+    downloaded = _downloaded_model_types(deps, model_types)
+    return downloaded if len(downloaded) > 0 else model_types
+
+
+def is_downloaded_only_fallback(deps, model_filter=None):
+    """True when the downloaded-only filter is on but no model is downloaded, so every model is shown."""
+    if not is_downloaded_only(deps):
+        return False
+    return len(_downloaded_model_types(deps, get_filtered_dropdown_model_types(deps, model_filter, downloaded_only=False))) == 0
+
+
+def _get_selector_model_types(deps, state):
+    # Same list as the dropdowns: the current model stays selectable even when it is not downloaded
+    dropdown_types = get_filtered_dropdown_model_types(deps, get_model_output_filter(deps, state))
+    current_model_type = (state or {}).get("model_type", None)
+    if current_model_type is not None and current_model_type not in dropdown_types and deps.get_model_def(current_model_type) is not None:
+        dropdown_types.append(current_model_type)
+    return dropdown_types
+
+
+def get_filtered_dropdown_model_types(deps, model_filter=None, dropdown_types=None, downloaded_only=True):
     dropdown_types = get_dropdown_model_types(deps) if dropdown_types is None else list(dict.fromkeys(dropdown_types))
     allowed_model_types = _get_model_types_for_output_filter(deps, get_model_output_filter(deps) if model_filter is None else model_filter, dropdown_types)
-    if allowed_model_types is None:
-        return dropdown_types
-    return [model_type for model_type in dropdown_types if model_type in allowed_model_types]
+    if allowed_model_types is not None:
+        dropdown_types = [model_type for model_type in dropdown_types if model_type in allowed_model_types]
+    return filter_downloaded_model_types(deps, dropdown_types) if downloaded_only else dropdown_types
 
 
 def _main_outputs_for_model_type(deps, model_type):
@@ -669,7 +710,8 @@ def create_models_hierarchy(rows):
 
 
 def create_models_selector_hierarchy(deps, dropdown_types=None):
-    dropdown_types = get_filtered_dropdown_model_types(deps) if dropdown_types is None else list(dict.fromkeys(dropdown_types))
+    # The model browser always lists every model, so new ones can still be picked for download
+    dropdown_types = get_filtered_dropdown_model_types(deps, downloaded_only=False) if dropdown_types is None else list(dict.fromkeys(dropdown_types))
     family_model_types = defaultdict(list)
     for model_type in dropdown_types:
         family = deps.get_model_family(model_type, for_ui=True)
@@ -747,7 +789,7 @@ def generate_dropdown_model_list(deps, current_model_type, state=None):
 
 
 def change_model_family(deps, state, current_model_family):
-    dropdown_types = get_filtered_dropdown_model_types(deps, get_model_output_filter(deps, state))
+    dropdown_types = _get_selector_model_types(deps, state)
     current_family_name = deps.families_infos[current_model_family][1]
     models_families = [deps.get_model_family(t, for_ui=True) for t in dropdown_types]
     dropdown_choices = [(compact_name(current_family_name, deps.get_model_name(model_type)), model_type) for model_type, family in zip(dropdown_types, models_families) if family == current_model_family]
@@ -779,7 +821,7 @@ def change_model_family(deps, state, current_model_family):
 def change_model_base_types(deps, state, current_model_family, model_base_type_choice):
     if not deps.three_levels_hierarchy:
         return gr.update()
-    dropdown_types = get_filtered_dropdown_model_types(deps, get_model_output_filter(deps, state))
+    dropdown_types = _get_selector_model_types(deps, state)
     current_family_name = deps.families_infos[current_model_family][1]
     dropdown_choices = [(compact_name(current_family_name, deps.get_model_name(model_type)), model_type, model_base_type_choice) for model_type in dropdown_types if deps.get_parent_model_type(model_type) == model_base_type_choice and deps.get_model_family(model_type, for_ui=True) == current_model_family]
     dropdown_choices = sorted(dropdown_choices, key=lambda c: c[0])

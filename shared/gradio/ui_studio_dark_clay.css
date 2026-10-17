@@ -1,0 +1,326 @@
+﻿/* Dark Clay palette: puffy surfaces, pressed-in inputs, lilac accent. Always dark (see ui_studio.DARK_THEMES). */
+.wangp-studio-scope,
+.dark .wangp-studio-scope {
+    --studio-surface: #2c2d3c;
+    --studio-input: #1c1d27;
+    --studio-border: #3a3b4e;
+    --studio-label: #c4baff;
+    --studio-accent: #9b8cff;
+    --studio-soft: #3d3a5e;
+    --studio-button: #323345;
+    --studio-button-hover: #38394d;
+    --studio-button-text: #eceaf6;
+    --studio-disabled: #272834;
+    --studio-disabled-text: #6f6d88;
+    --clay-raised: #323345;
+    --clay-menu: #2f3042;
+    --clay-hi: rgba(255, 255, 255, .07);
+    --clay-lo: rgba(0, 0, 0, .35);
+    --clay-puff: 8px 10px 22px rgba(0, 0, 0, .45), inset 4px 4px 8px var(--clay-hi), inset -4px -4px 8px var(--clay-lo);
+    --clay-puff-small: 3px 4px 10px rgba(0, 0, 0, .4), inset 2px 2px 4px var(--clay-hi), inset -2px -2px 4px var(--clay-lo);
+    --clay-dent: inset 3px 3px 7px var(--clay-lo), inset -3px -3px 7px var(--clay-hi);
+    --clay-pressed: inset 3px 3px 6px var(--clay-lo), inset -2px -2px 5px var(--clay-hi);
+    --clay-ring: 0 0 0 3px rgba(155, 140, 255, .45);
+    --clay-float: 0 18px 40px rgba(0, 0, 0, .55), 0 4px 12px rgba(0, 0, 0, .35), inset 1px 1px 0 rgba(255, 255, 255, .06);
+    --clay-danger: #ff8a9a;
+    --clay-ok: #6fdcb0;
+}
+body, gradio-app, .gradio-container {
+    background: #22232f !important;
+}
+
+/* ---------- fields: soft raised cards holding pressed-in inputs ---------- */
+.wangp-studio-field {
+    --block-background-fill: var(--studio-surface);
+    --input-border-color: transparent;
+    --input-border-color-focus: transparent;
+    --input-shadow: var(--clay-dent);
+    --input-shadow-focus: var(--clay-dent), var(--clay-ring);
+    --block-shadow: var(--clay-puff-small);
+    --block-radius: 18px;
+    --input-radius: 13px;
+    --block-label-text-color: var(--studio-label);
+    --block-title-text-color: var(--studio-label);
+}
+.wangp-studio-field input[type="number"] {
+    border: 0;
+    border-radius: 10px;
+    box-shadow: var(--clay-dent);
+}
+.wangp-studio-field :is(input, textarea):disabled {
+    background: var(--studio-disabled) !important;
+    color: var(--studio-disabled-text) !important;
+    box-shadow: none !important;
+}
+
+/* ---------- buttons: raised clay, pressed when clicked ---------- */
+.wangp-studio-button:not(.resolution-picker-toggle, [id="wangp_finetune_editor_close"]) {
+    --button-secondary-border-color: transparent;
+    --button-secondary-border-color-hover: transparent;
+    --button-primary-border-color: transparent;
+    --button-primary-border-color-hover: transparent;
+    --button-large-radius: 14px;
+    --button-small-radius: 12px;
+    --button-large-text-weight: 700;
+    box-shadow: var(--clay-puff-small) !important;
+    transition: background-color 120ms ease, box-shadow 120ms ease, transform 80ms ease;
+}
+.wangp-studio-button:not(.resolution-picker-toggle, [id="wangp_finetune_editor_close"]):active {
+    box-shadow: var(--clay-pressed) !important;
+    transform: translateY(1px);
+}
+.wangp-studio-button:not(.resolution-picker-toggle, [id="wangp_finetune_editor_close"]):focus-visible {
+    outline: none;
+    box-shadow: var(--clay-puff-small), var(--clay-ring) !important;
+}
+.wangp-studio-button:disabled {
+    box-shadow: none !important;
+    opacity: .55;
+    transform: none;
+}
+.wangp-studio-generation-action:not(.resolution-picker-toggle, [id="wangp_finetune_editor_close"]):not(:disabled) {
+    --button-secondary-background-fill: linear-gradient(135deg, #b8adff, #9b8cff 50%, #7f6cf5);
+    --button-secondary-background-fill-hover: linear-gradient(135deg, #c4baff, #a99cff 50%, #8b7af7);
+    --button-secondary-text-color: #16151f;
+    --button-secondary-text-color-hover: #16151f;
+    --button-primary-background-fill: linear-gradient(135deg, #b8adff, #9b8cff 50%, #7f6cf5);
+    --button-primary-background-fill-hover: linear-gradient(135deg, #c4baff, #a99cff 50%, #8b7af7);
+    --button-primary-text-color: #16151f;
+    --button-primary-text-color-hover: #16151f;
+    border-radius: 999px !important;
+    font-weight: 900 !important;
+    box-shadow: 0 8px 20px rgba(155, 140, 255, .32), inset 3px 3px 6px rgba(255, 255, 255, .4), inset -3px -4px 8px rgba(0, 0, 0, .2) !important;
+}
+.wangp-studio-generation-action:not(.resolution-picker-toggle, [id="wangp_finetune_editor_close"]):not(:disabled):active {
+    box-shadow: inset 3px 4px 8px rgba(0, 0, 0, .3), inset -2px -2px 4px rgba(255, 255, 255, .25) !important;
+}
+
+/* ---------- tabs: pressed-in pill track, raised selected pill ---------- */
+.wangp-studio-tabs > .tab-wrapper {
+    border: 0;
+    padding: 5px;
+    margin-bottom: 10px;
+    border-radius: 999px;
+    background: var(--studio-input);
+    box-shadow: var(--clay-dent);
+    width: fit-content;
+    max-width: 100%;
+}
+.wangp-studio-tabs > .tab-wrapper > .tab-container {
+    gap: 4px;
+}
+.wangp-studio-tabs > .tab-wrapper > .tab-container::after {
+    display: none;
+}
+.wangp-studio-tabs > .tab-wrapper > .tab-container button {
+    border: 0 !important;
+    border-radius: 999px !important;
+    padding: 6px 16px;
+    font-weight: 700;
+    color: var(--body-text-color-subdued);
+    transition: color 120ms ease, background-color 120ms ease;
+}
+.wangp-studio-tabs > .tab-wrapper > .tab-container button:hover {
+    color: var(--body-text-color);
+}
+.wangp-studio-tabs > .tab-wrapper > .tab-container button.selected {
+    color: var(--body-text-color);
+    background: var(--clay-raised);
+    border-radius: 999px !important;
+    box-shadow: var(--clay-puff-small);
+}
+.wangp-studio-tabs > .tab-wrapper > .tab-container button.selected::after {
+    display: none;
+}
+
+/* ---------- accordions ---------- */
+.wangp-studio-accordion > .label-wrap {
+    padding: 10px 14px;
+    margin: 4px 0;
+    border: 0;
+    border-radius: 14px;
+    background: var(--clay-raised);
+    box-shadow: var(--clay-puff-small);
+    font-weight: 800;
+}
+.wangp-studio-accordion > .label-wrap.open {
+    box-shadow: var(--clay-pressed);
+}
+
+/* ---------- dropdown menus: floating clay panel ---------- */
+.wangp-studio-scope ul.options {
+    padding: 6px;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: var(--clay-menu) !important;
+    box-shadow: var(--clay-float) !important;
+}
+.wangp-studio-scope ul.options > li.item {
+    border-radius: 11px;
+    margin: 1px 0;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: #dcd9ec;
+}
+.wangp-studio-scope ul.options > li.item:is(:hover, .active) {
+    background: #38394d !important;
+    color: var(--body-text-color);
+    box-shadow: var(--clay-puff-small);
+}
+.wangp-studio-scope ul.options > li.item.selected {
+    color: var(--studio-label);
+    background: transparent;
+    font-weight: 800;
+}
+.wangp-studio-scope ul.options > li.item.selected:is(:hover, .active) {
+    background: #38394d !important;
+}
+
+/* ---------- checkboxes & radios ---------- */
+.wangp-studio-scope input[type="checkbox"],
+.wangp-studio-scope input[type="radio"] {
+    border: 0 !important;
+    background-color: var(--studio-input);
+    box-shadow: var(--clay-dent);
+}
+.wangp-studio-scope input[type="checkbox"] {
+    border-radius: 7px !important;
+}
+.wangp-studio-scope input[type="checkbox"]:checked,
+.wangp-studio-scope input[type="radio"]:checked {
+    background-color: var(--studio-accent);
+    box-shadow: 2px 3px 7px rgba(0, 0, 0, .35), inset 2px 2px 3px rgba(255, 255, 255, .35), inset -2px -2px 3px rgba(0, 0, 0, .2);
+}
+.wangp-studio-scope label:has(> input[type="checkbox"], > input[type="radio"]) {
+    border: 0 !important;
+    border-radius: 12px !important;
+}
+
+/* ---------- sliders: pressed-in track, gradient fill, puffy knob ---------- */
+.wangp-studio-scope input[type="range"] {
+    height: 10px;
+    border-radius: 999px;
+    box-shadow: var(--clay-dent);
+}
+.wangp-studio-scope input[type="range"]::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 50%;
+    background: #e9e6ff;
+    box-shadow: 3px 4px 10px rgba(0, 0, 0, .4), inset -2px -3px 4px rgba(0, 0, 0, .18), inset 2px 2px 3px #fff;
+}
+.wangp-studio-scope input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 50%;
+    background: #e9e6ff;
+    box-shadow: 3px 4px 10px rgba(0, 0, 0, .4), inset -2px -3px 4px rgba(0, 0, 0, .18), inset 2px 2px 3px #fff;
+}
+
+/* ---------- gallery & media ---------- */
+.wangp-studio-gallery {
+    --block-radius: 18px;
+}
+.wangp-studio-gallery .preview,
+.wangp-studio-gallery .grid-wrap {
+    border-radius: 16px;
+    background: var(--studio-input);
+    box-shadow: var(--clay-dent);
+}
+.wangp-studio-gallery .thumbnail-small,
+.wangp-studio-gallery .thumbnail-item {
+    border-radius: 12px;
+    border-color: transparent;
+    box-shadow: var(--clay-puff-small);
+}
+.wangp-studio-gallery .thumbnail-small.selected,
+.wangp-studio-gallery .thumbnail-item.selected {
+    box-shadow: var(--clay-puff-small), var(--clay-ring);
+}
+
+/* ---------- model selector bar ---------- */
+.wangp-studio-scope .wangp-model-info-host {
+    border-left: 0;
+    padding: 2px 6px;
+    color: var(--body-text-color-subdued);
+}
+.wangp-studio-scope :is(#family_list, #model_base_types_list, #model_list) {
+    --block-background-fill: var(--clay-raised);
+    --input-background-fill: var(--clay-raised);
+    --input-shadow: none;
+    --input-border-color: transparent;
+    border-radius: 15px !important;
+    box-shadow: var(--clay-puff-small) !important;
+}
+.wangp-studio-scope :is(#family_list, #model_base_types_list, #model_list) input[role="listbox"] {
+    font-weight: 700;
+}
+.wangp-studio-scope .wangp-model-output-filter-wrap .wangp-model-output-filter {
+    padding: 4px;
+    border-radius: 14px;
+    background: var(--studio-input);
+    box-shadow: var(--clay-dent);
+}
+.wangp-studio-scope .wangp-model-output-filter-link {
+    border-radius: 11px;
+    height: 34px;
+    max-width: 38px;
+}
+.wangp-studio-scope .wangp-model-output-filter-link-active:not(.wangp-downloaded-only-toggle) {
+    background: var(--studio-accent) !important;
+    color: #16151f !important;
+    box-shadow: 3px 4px 10px rgba(0, 0, 0, .4), inset 3px 3px 5px rgba(255, 255, 255, .4), inset -3px -3px 5px rgba(0, 0, 0, .2) !important;
+}
+.wangp-studio-scope .wangp-model-output-filter-link-active svg {
+    filter: none;
+}
+.wangp-studio-scope .wangp-downloaded-only-toggle.wangp-model-output-filter-link-active {
+    color: var(--clay-ok) !important;
+}
+
+/* Family / model / variant: three separate raised pills instead of one joined bar */
+.dark .form:has(> #family_list),
+.form:has(> #family_list) {
+    gap: 10px !important;
+    border: 0 !important;
+    background: transparent !important;
+    overflow: visible;
+}
+.dark :is(#model_list, #family_list, #model_base_types_list),
+:is(#model_list, #family_list, #model_base_types_list) {
+    --wangp-model-corners: 15px !important;
+    background-color: var(--clay-raised, #323345) !important;
+    padding: 0 !important;
+}
+:is(#model_list, #family_list, #model_base_types_list) input {
+    font-size: 16px !important;
+}
+
+/* ---------- header & side launcher ---------- */
+h1 > sup {
+    color: var(--color-accent, #9b8cff) !important;
+}
+#assistant_chat_toggle {
+    background: #323345 !important;
+    color: #c4baff !important;
+    box-shadow: 3px 4px 10px rgba(0, 0, 0, .4), inset 2px 2px 4px rgba(255, 255, 255, .07), inset -2px -2px 4px rgba(0, 0, 0, .35) !important;
+}
+#assistant_chat_toggle .chat__toggle-text {
+    color: #c4baff !important;
+    font-weight: 900;
+}
+
+/* ---------- notifications ---------- */
+.toast-wrap .toast-body,
+.gradio-container [role="alert"] {
+    border: 0 !important;
+    border-radius: 18px !important;
+    background: var(--clay-menu, #2f3042) !important;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .55), 0 4px 12px rgba(0, 0, 0, .35) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wangp-studio-button { transition: none; transform: none !important; }
+}
