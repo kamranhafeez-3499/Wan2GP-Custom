@@ -11111,7 +11111,7 @@ def preload_model_when_switching(state):
                 wan_model, offloadobj = load_models(
                     model_type,
                     output_type=get_profile_type_for_model(model_type, 0),
-                    override_compile=get_current_model_settings(state).get("override_compile", ""), gen=gen,
+                    override_compile=get_current_model_settings(state).get("override_compile", ""),
                 )
                 reload_needed = False
             finally:
