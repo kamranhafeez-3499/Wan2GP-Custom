@@ -98,7 +98,8 @@ _JS_MODEL_SWITCH = r"""
     // Enqueue follows the pick within one round trip, so a pick older than 2 s is stale.
     const freshPick = () => (lastPicked && performance.now() - pickedAt < 2000) ? lastPicked : '';
     const fallbackName = () => cleanName(document.querySelector('#model_list input')?.value);
-    const STATUS_PREFIX = /^[\u2B1B\u{1F7E6}\u{1F7E8}\s]+/u;
+    // Status squares from MODEL_STATUS_PREFIXES plus the tick Gradio prepends to the selected dropdown item.
+    const STATUS_PREFIX = /^[\u2713\u2B1B\u{1F7E6}\u{1F7E8}\s]+/u;
     const cleanName = (t) => (t || '').replace(STATUS_PREFIX, '').trim();
     // The settings column carries .wangp-actions-column only with the floating generate button; otherwise
     // use the first row after the model selector that holds the prompt textarea.
