@@ -14234,7 +14234,7 @@ def create_ui():
     local_file_picker.configure_last_directory_store(server_config)
     UI_theme = server_config.get("UI_theme", "default")
     UI_theme  = args.theme if len(args.theme) > 0 else UI_theme
-    css += "\n" + busy_states.get_css() if UI_theme == "dark_clay" else ""
+    css += ("\n" + busy_states.get_css()) if UI_theme == "dark_clay" else ""
     theme = ui_studio.create_theme(UI_theme, spacing_size=theme_spacing_size, radius_size=theme_radius_size, text_size=theme_text_size)
 
     # Load main JS from external file
