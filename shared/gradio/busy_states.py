@@ -102,12 +102,12 @@ _JS_MODEL_SWITCH = r"""
     const STATUS_PREFIX = /^[\u2713\u2B1B\u{1F7E6}\u{1F7E8}\s]+/u;
     const cleanName = (t) => (t || '').replace(STATUS_PREFIX, '').trim();
     // The settings column carries .wangp-actions-column only with the floating generate button; otherwise
-    // use the first row after the model selector that holds the prompt textarea.
+    // use the first row after the model selector that holds a visible textarea (the prompt).
     const settingsColumn = () => {
         const fixed = document.querySelector('.wangp-actions-column');
         if (fixed) return fixed;
         let row = document.querySelector('#family_list')?.closest?.('.row')?.nextElementSibling;
-        for (; row; row = row.nextElementSibling) if (row.querySelector('textarea')) return row.querySelector('.column') || row;
+        for (; row; row = row.nextElementSibling) if ([...row.querySelectorAll('textarea')].some(t => t.offsetParent)) return row.querySelector('.column') || row;
         return null;
     };
     const lineEl = () => {
