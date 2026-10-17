@@ -68,6 +68,44 @@ _JS_CORE = """
 })();
 """
 
+_JS_MODEL_SWITCH = r"""
+(() => {
+    if (window.wangpModelSwitchWired) return;
+    window.wangpModelSwitchWired = true;
+    const PICK = '#family_list li.item, #model_base_types_list li.item, #model_list li.item';
+    let lastPicked = '';
+    document.addEventListener('click', (e) => {
+        const li = e.target?.closest?.(PICK);
+        if (li) lastPicked = (li.textContent || '').trim();
+    }, true);
+    const currentName = () => lastPicked || (document.querySelector('#model_list input')?.value || '').trim();
+    const lineEl = () => {
+        let el = document.getElementById('wangp_switching_line');
+        if (el) return el;
+        const row = document.querySelector('#family_list')?.closest('.row');
+        if (!row) return null;
+        el = document.createElement('div');
+        el.id = 'wangp_switching_line';
+        el.style.display = 'none';
+        row.insertAdjacentElement('afterend', el);
+        return el;
+    };
+    window.addEventListener('wangp:model-switch-start', () => {
+        window.wangpBusy?.start('model', '#model_list', {skeleton: '.wangp-actions-column', timeoutMs: 120000});
+        const el = lineEl();
+        if (!el) return;
+        el.textContent = 'Switching to ' + currentName() + '… rebuilding settings';
+        el.style.display = '';
+    });
+    window.addEventListener('wangp:model-switch-end', () => {
+        window.wangpBusy?.end('model');
+        const el = document.getElementById('wangp_switching_line');
+        if (el) el.style.display = 'none';
+        lastPicked = '';
+    });
+})();
+"""
+
 _CSS_CORE = r"""
 .wangp-busy { pointer-events: none; position: relative; box-shadow: inset 3px 3px 6px rgba(0,0,0,.35), inset -2px -2px 5px rgba(255,255,255,.07) !important; }
 .wangp-busy .wangp-studio-icon::before { display: none; }
@@ -80,6 +118,7 @@ _CSS_CORE = r"""
 .wangp-skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(155,140,255,.10) 40%, rgba(255,255,255,.07) 50%, transparent 70%); animation: wangp-shimmer 1.3s ease-in-out infinite; pointer-events: none; }
 @keyframes wangp-spin { to { transform: rotate(360deg); } }
 @keyframes wangp-shimmer { to { transform: translateX(100%); } }
+#wangp_switching_line { color: #c4baff; font-size: 13px; font-weight: bold; padding: 4px 2px; }
 @media (prefers-reduced-motion: reduce) {
     .wangp-busy::before { animation: none; border-right-color: currentColor; opacity: .6; }
     .wangp-skeleton::after { animation: none; transform: none; }
@@ -88,7 +127,7 @@ _CSS_CORE = r"""
 
 
 def get_javascript():
-    return _JS_CORE
+    return _JS_CORE + _JS_MODEL_SWITCH
 
 
 def get_css():

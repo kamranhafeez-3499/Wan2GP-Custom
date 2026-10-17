@@ -14,6 +14,7 @@ function wangpModelEnqueue(group, run) {
     let queue = wangpModelQueues.get(group);
     if (!queue) wangpModelQueues.set(group, queue = []);
     queue.push(run);
+    window.dispatchEvent(new CustomEvent("wangp:model-switch-start"));
     if (queue.length === 1) run();
 }
 function wangpModelRelease(group) {
@@ -21,7 +22,10 @@ function wangpModelRelease(group) {
     if (!queue) return;
     queue.shift();
     if (queue.length) queue[0]();
-    else wangpModelQueues.delete(group);
+    else {
+        wangpModelQueues.delete(group);
+        window.dispatchEvent(new CustomEvent("wangp:model-switch-end"));
+    }
 }
 """
 _REPLACEMENTS = {
