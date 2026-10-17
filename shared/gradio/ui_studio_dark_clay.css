@@ -302,6 +302,10 @@ body, gradio-app, .gradio-container {
 h1 > sup {
     color: var(--color-accent, #9b8cff) !important;
 }
+/* Nunito makes the title 1px taller than its block, which then shows a scrollbar */
+.block:has(h1 > sup) {
+    overflow: visible !important;
+}
 #assistant_chat_toggle {
     background: #323345 !important;
     color: #c4baff !important;
