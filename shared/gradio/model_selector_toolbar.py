@@ -8,6 +8,7 @@ from typing import Callable
 import gradio as gr
 
 from shared import model_dropdowns
+from shared.gradio.busy_states import mark_busy
 from shared.deepy.config import deepy_available
 from shared.utils.model_unload import model_unload_guard
 
@@ -36,8 +37,8 @@ def create_toolbar(is_finetune_editor=False):
         with gr.Row(elem_classes=["wangp-model-selector-tool-row"]) as tool_row:
             search_button = gr.Button("⌕", elem_id="wangp_model_tool_search", elem_classes=["wangp-model-selector-tool", "wangp-model-selector-tool-search"], size="sm", scale=0)
             finetune_button = gr.Button("✎" if is_finetune_editor else "+", elem_id="wangp_model_tool_finetune", elem_classes=["wangp-model-selector-tool", "wangp-model-selector-tool-finetune"], size="sm", scale=0)
-            refresh_button = gr.Button("↻", elem_id="wangp_model_tool_refresh", elem_classes=["wangp-model-selector-tool", "wangp-model-selector-tool-refresh"], size="sm", scale=0)
-            unload_button = gr.Button("Unload models and extensions", elem_id="wangp_model_tool_unload", elem_classes=["wangp-model-selector-tool", "wangp-model-selector-tool-unload"], size="sm", scale=0)
+            refresh_button = mark_busy(gr.Button("↻", elem_id="wangp_model_tool_refresh", elem_classes=["wangp-model-selector-tool", "wangp-model-selector-tool-refresh"], size="sm", scale=0), "model_refresh")
+            unload_button = mark_busy(gr.Button("Unload models and extensions", elem_id="wangp_model_tool_unload", elem_classes=["wangp-model-selector-tool", "wangp-model-selector-tool-unload"], size="sm", scale=0), "model_unload")
         with gr.Row(visible=False, elem_classes=["wangp-model-selector-search-row"]) as search_row:
             with gr.Column(scale=1, min_width=0, elem_classes=["wangp-model-selector-search-box"]):
                 search_query = gr.Textbox(value="", show_label=False, placeholder="Search models", elem_id="wangp_model_search_query", elem_classes=["wangp-model-selector-search-input"])

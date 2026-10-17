@@ -16,6 +16,7 @@ from shared.deepy.assets import WHISPER_MODEL_CHOICES, WHISPER_MODEL_KEY
 from shared.deepy.voice import VOICE_MODE_KEY, VOICE_MODE_CHOICES, voice_mode
 from shared.deepy.engine import get_or_create_assistant_session
 from shared.gradio import assistant_chat, gradio_queue_focus_patch, ui_studio
+from shared.gradio.busy_states import mark_busy
 from shared.gradio.hierarchy_selector import HierarchySelector
 from shared import notifications
 from shared.utils import prompt_parser
@@ -803,7 +804,7 @@ class ConfigTabPlugin(WAN2GPPlugin):
 
             self.msg = gr.Markdown()
             with gr.Row():
-                self.apply_btn = gr.Button("Save Settings")
+                self.apply_btn = mark_busy(gr.Button("Save Settings"), "config_save")
 
         def update_deepy_requirement(enhancer_enabled_choice, deepy_type_choice, deepy_context_tokens_choice, deepy_compaction_type_choice, deepy_llm_engine_choice):
             if deepy_type_choice == DEEPY_TYPE_DISABLED:

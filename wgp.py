@@ -158,7 +158,7 @@ from shared.utils.side_files import process_side_files
 from shared.utils import workspace_storage
 from shared.utils.plugins import PluginManager, WAN2GPApplication, SYSTEM_PLUGINS
 from shared.llm_engines.nanovllm.vllm_support import resolve_lm_decoder_engine
-from shared.gradio import assistant_chat, field_help, finetune_editor, gallery_files, local_file_picker, model_infos, model_output_filter, model_selector_toolbar, ui_studio
+from shared.gradio import assistant_chat, busy_states, field_help, finetune_editor, gallery_files, local_file_picker, model_infos, model_output_filter, model_selector_toolbar, ui_studio
 from shared.gradio.magic_mask import MagicMaskUI, video_mask_area_visible, video_mask_controls_visible, video_mask_dropdown_visible
 from shared import model_dropdowns
 from shared import settings_metadata
@@ -13202,6 +13202,7 @@ def generate_media_tab(update_form = False, state_dict = None, ui_defaults = Non
                     reset_settings_btn = gr.Button("Reset Settings", elem_classes=["wangp-reset-settings"], size="sm", scale=0, min_width=36)
                 with gr.Row():
                     settings_file = gr.File(height=41, label="Load Settings From Media File / Json / Zip", elem_classes="wangp-settings-upload")
+                    [busy_states.mark_busy(c, k) for c, k in ((apply_lset_btn, "apply"), (refresh_lora_btn, "refresh_loras"), (refresh_lora_btn2, "refresh_loras"), (confirm_save_lset_btn, "save_preset"), (confirm_delete_lset_btn, "delete_preset"), (save_settings_btn, "set_default"), (reset_settings_btn, "reset_settings"))]; busy_states.mark_busy(settings_file, "load_settings", ".wangp-settings-upload")
                     settings_download_payload = gr.Text(interactive=False, visible=False, value="")
                 with gr.Group():
                     with gr.Row(elem_classes=["wangp-lora-download-row"]):
@@ -14232,6 +14233,7 @@ def create_ui():
     local_file_picker.configure_last_directory_store(server_config)
     UI_theme = server_config.get("UI_theme", "default")
     UI_theme  = args.theme if len(args.theme) > 0 else UI_theme
+    css += "\n" + busy_states.get_css() if UI_theme == "dark_clay" else ""
     theme = ui_studio.create_theme(UI_theme, spacing_size=theme_spacing_size, radius_size=theme_radius_size, text_size=theme_text_size)
 
     # Load main JS from external file
@@ -14247,6 +14249,7 @@ def create_ui():
     js += model_output_filter.get_javascript()
     js += model_selector_toolbar.get_javascript()
     js += finetune_editor.get_javascript()
+    js += busy_states.get_javascript()
     js += ui_studio.get_theme_javascript(UI_theme)
     StripGallery.install_gradio_upload_mtime_patch()
     app.initialize_plugins(globals())
