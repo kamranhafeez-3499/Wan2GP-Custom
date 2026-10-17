@@ -496,8 +496,29 @@ def has_secondary_model_files_for_status(deps, model_type, quantization, dtype_p
     return True
 
 
+_STATUS_CACHE_TTL = 2.0
+_status_cache = {}
+
+
+def clear_download_status_cache():
+    _status_cache.clear()
+
+
 def get_model_download_status(deps, model_type):
+    """Download status of a model, memoized for a few seconds: one model switch or list refresh asks for the
+    status of every model several times, and each ask probes the filesystem."""
     quantization, dtype_policy = _get_status_quantization_and_dtype(deps)
+    key = (id(deps.get_local_model_filename), model_type, quantization, dtype_policy)
+    now = time.monotonic()
+    hit = _status_cache.get(key)
+    if hit is not None and now - hit[0] < _STATUS_CACHE_TTL:
+        return hit[1]
+    status = _compute_model_download_status(deps, model_type, quantization, dtype_policy)
+    _status_cache[key] = (now, status)
+    return status
+
+
+def _compute_model_download_status(deps, model_type, quantization, dtype_policy):
     model_def = deps.get_model_def(model_type)
     expected_filenames = []
     expected_filename = deps.get_model_filename(model_type, quantization=quantization, dtype_policy=dtype_policy)
